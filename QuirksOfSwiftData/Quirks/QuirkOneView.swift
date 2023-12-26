@@ -1,14 +1,14 @@
-# QuirksOfSwiftData
+//
+//  Quirk1.swift
+//  QuirksOfSwiftData
+//
+//  Created by Prajeet Shrestha on 26/12/2023.
+//
 
-## Overview.
+import Foundation
+import SwiftData
+import SwiftUI
 
-This project will showcase all the quirks and gotchas of SwiftData as of iOS 17.2. SwiftData is rapidly evolving and the experiments in this repo might be obsolete in the future, still this might help people researching on SwiftData. 
-**Feedbacks and pull requests most appreciated.** 
-
-## Quirks One
-
-### Models used: 
-``` swift
 @Model
 fileprivate class Player {
     var name: String
@@ -40,12 +40,8 @@ fileprivate class GameRound {
         self.id = id
     }
 }
-```
 
-While it was claimed in the SwiftData WWDC video that @Observable(ObservableObject/Observable)  objects could be easily swapped with @Model(PeristentModel) objects but that doesn't seem to be the case. In models with relationship if you can't access related object before inserting the object into modelContext. 
-
-
-```
+fileprivate class DataManager {
     static func thisWontWork(context: ModelContext) {
         let player1 = Player("Player 1")
         let player2 = Player("Player 2")
@@ -91,5 +87,59 @@ While it was claimed in the SwiftData WWDC video that @Observable(ObservableObje
             print(p.name)
         }
     }
-```
+}
 
+struct QuirkOneContainer: View {
+    var body: some View {
+        QuirkOneView()
+            .modelContainer(for: [GameRound.self, GameRound2.self])
+    }
+}
+
+struct QuirkOneView: View {
+    
+    let description = """
+On data with relationship,
+"""
+    @Environment(\.modelContext) var modelContext
+    var body: some View {
+        List {
+            Button("This won't work") {
+                DataManager.thisWontWork(context: modelContext)
+            }
+            .accentColor(.red)
+            
+            Button("This won't work 2") {
+                DataManager.thisWontWork2(context: modelContext)
+            }
+            .accentColor(.red)
+            
+            Button("This will work") {
+                DataManager.thisWillWork(context: modelContext)
+            }.accentColor(.green)
+        }
+    }
+}
+
+#Preview {
+    QuirkOneView()
+        .modelContainer(previewContainer)
+}
+
+@MainActor
+fileprivate let previewContainer: ModelContainer = {
+    do {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        
+        let container = try ModelContainer(
+            for: Schema([GameRound.self, Player.self]),
+            configurations: configuration
+        )
+        container.mainContext.autosaveEnabled = true
+        let modelContext = container.mainContext
+        
+        return container
+    } catch {
+        fatalError("Failed to create container")
+    }
+}()
