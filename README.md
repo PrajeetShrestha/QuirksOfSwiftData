@@ -1,13 +1,14 @@
-# QuirksOfSwiftData
+# Quirks Of SwiftData
 
-## Overview.
+## Overview
 
-This project will showcase all the quirks and gotchas of SwiftData as of iOS 17.2. SwiftData is rapidly evolving and the experiments in this repo might be obsolete in the future, still this might help people researching on SwiftData. 
-**Feedbacks and pull requests most appreciated.** 
+This project will showcase all the quirks and gotchas of SwiftData as of iOS 17.2. SwiftData is rapidly evolving and the experiments in this repo might be obsolete in the future, still this might help people researching on SwiftData.
+**Feedbacks and pull requests most appreciated.**
 
 ## Quirks One
 
-### Models used: 
+### Models used
+
 ``` swift
 @Model
 fileprivate class Player {
@@ -42,54 +43,48 @@ fileprivate class GameRound {
 }
 ```
 
-While it was claimed in the SwiftData WWDC video that @Observable(ObservableObject/Observable)  objects could be easily swapped with @Model(PeristentModel) objects but that doesn't seem to be the case. In models with relationship if you can't access related object before inserting the object into modelContext. 
+While it was claimed in the SwiftData WWDC video that @Observable(ObservableObject/Observable)  objects could be easily swapped with @Model(PeristentModel) objects but that doesn't seem to be the case. In models with relationship if you can't access related object before inserting the object into modelContext.
 
+```swift
+static func thisWontWork(context: ModelContext) {
+    let player1 = Player("Player 1")
+    let player2 = Player("Player 2")
+    let players = [player1, player2]
 
-``` swift
-    static func thisWontWork(context: ModelContext) {
-        let player1 = Player("Player 1")
-        let player2 = Player("Player 2")
-        let players = [player1, player2]
-        
-        let round = GameRound()
-        round.players = players
-            
-        // Accessed property of PersistentModel before inserting into context
-        for p in round.players ?? [] {
-            print(p.name)
-        }
+    let round = GameRound()
+    round.players = players
+
+    // Accessed property of PersistentModel before inserting into context
+    for p in round.players ?? [] {
+        print(p.name)
     }
+}
+
+/// This won't work because of the way GameRound2 init method is defined. You should not initialized a property that has inverse this way.
+static func thisWontWork2(context: ModelContext) {
+    let player1 = Player("Player 1")
+    let player2 = Player("Player 2")
+    context.insert(player1)
+    context.insert(player2)
+    let players = [player1, player2]
+
+    let round = GameRound2()
+    round.players = players
+
+    // Accessed property of PersistentModel before inserting into context
+    for p in round.players ?? [] {
+        print(p.name)
+    }
+}
+
+static func thisWillWork(context: ModelContext) {
+    let player1 = Player("Player 1")
+    let player2 = Player("Player 2")
+    let players = [player1, player2]
+
+    let round = GameRound()
+    round.players = players
+    print(p.name)
+}
     
-    /// This won't work because of the way GameRound2 init method is defined. You should not initialized a property that has inverse this way.
-    static func thisWontWork2(context: ModelContext) {
-        let player1 = Player("Player 1")
-        let player2 = Player("Player 2")
-        context.insert(player1)
-        context.insert(player2)
-        let players = [player1, player2]
-        
-        let round = GameRound2()
-        round.players = players
-            
-        // Accessed property of PersistentModel before inserting into context
-        for p in round.players ?? [] {
-            print(p.name)
-        }
-    }
-    
-    static func thisWillWork(context: ModelContext) {
-        let player1 = Player("Player 1")
-        let player2 = Player("Player 2")
-        let players = [player1, player2]
-        
-        let round = GameRound()
-        round.players = players
-        context.insert(round)
-
-        // Accessed property of PersistentModel only after inserting into context
-        for p in round.players ?? [] {
-            print(p.name)
-        }
-    }
 ```
-
