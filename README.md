@@ -45,7 +45,7 @@ fileprivate class GameRound {
 While it was claimed in the SwiftData WWDC video that @Observable(ObservableObject/Observable)  objects could be easily swapped with @Model(PeristentModel) objects but that doesn't seem to be the case. In models with relationship if you can't access related object before inserting the object into modelContext. 
 
 
-```
+``` swift
     static func thisWontWork(context: ModelContext) {
         let player1 = Player("Player 1")
         let player2 = Player("Player 2")
