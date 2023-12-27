@@ -81,10 +81,15 @@ static func thisWillWork(context: ModelContext) {
     let player1 = Player("Player 1")
     let player2 = Player("Player 2")
     let players = [player1, player2]
-
+    
     let round = GameRound()
     round.players = players
-    print(p.name)
+    context.insert(round)
+
+    // Accessed property of PersistentModel only after inserting into context
+    for p in round.players ?? [] {
+        print(p.name)
+    }
 }
     
 ```
